@@ -19,3 +19,13 @@ mlruns/
 # OS
 .DS_Store
 Thumbs.db
+# MLflow
+mlruns/
+mlflow.db
+
+# Models
+models/*.pkl
+
+# Python cache
+__pycache__/
+*.pyc
