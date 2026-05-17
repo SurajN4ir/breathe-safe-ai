@@ -33,3 +33,15 @@ monitoring/*.html
 .idea/
 .DS_Store
 Thumbs.db
+# Docker
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Build artifacts
+dist/
+build/
+
+# Mac/Linux temp
+*.swp
