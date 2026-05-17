@@ -7,10 +7,21 @@ const links = [
   { to: '/ops-center', icon: 'account_tree', label: 'Ops Center' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onToggle }) {
   return (
     <aside className="fixed left-0 top-16 z-40 hidden h-[calc(100vh-64px)] w-64 border-r border-white/10 bg-[#0c1118]/72 px-4 py-6 backdrop-blur-2xl md:block">
-      <div className="mb-8 flex items-center gap-3 rounded-lg border border-emerald-300/25 bg-emerald-300/8 px-4 py-3">
+      <div className="mb-4 flex items-center justify-end">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-white/5 text-muted transition hover:text-body"
+          aria-label="Collapse sidebar"
+        >
+          <span className="material-symbols-outlined text-[18px]">left_panel_close</span>
+        </button>
+      </div>
+
+      <div className="mb-6 flex items-center gap-3 rounded-lg border border-emerald-300/25 bg-emerald-300/8 px-4 py-3">
         <span className="live-dot"></span>
         <div>
           <p className="text-sm font-bold text-emerald">Live API Mode</p>
