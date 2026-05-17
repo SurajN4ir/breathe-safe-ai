@@ -1,31 +1,35 @@
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
 venv/
+.venv/
 
-# Environment variables
+# Node / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Environment variables and local secrets
 .env
+.env.*
+!.env.example
+!frontend/.env.example
 
-# DVC tracked data
+# Local generated data and artifacts
 data/raw/
 data/processed/
-
-# MLflow
-mlruns/
-
-# IDE
-.vscode/
-
-# OS
-.DS_Store
-Thumbs.db
-# MLflow
+data/feast/
 mlruns/
 mlflow.db
-
-# Models
 models/*.pkl
+monitoring/*.html
 
-# Python cache
-__pycache__/
-*.pyc
+# Tool caches
+.pytest_cache/
+.ruff_cache/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

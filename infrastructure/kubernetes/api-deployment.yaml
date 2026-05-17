@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: breathe-safe-api
+  labels:
+    app: breathe-safe-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: breathe-safe-api
+  template:
+    metadata:
+      labels:
+        app: breathe-safe-api
+    spec:
+      containers:
+        - name: api
+          image: breathe-safe-ai-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: OPENWEATHER_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: breathe-safe-secrets
+                  key: OPENWEATHER_API_KEY
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: breathe-safe-secrets
+                  key: GROQ_API_KEY
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: breathe-safe-api
+spec:
+  type: ClusterIP
+  selector:
+    app: breathe-safe-api
+  ports:
+    - port: 8000
+      targetPort: 8000

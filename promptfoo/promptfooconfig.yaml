@@ -1,0 +1,61 @@
+description: Breathe Safe AI environmental interpretation prompt checks
+
+providers:
+  - id: groq:llama3-8b-8192
+    config:
+      temperature: 0.2
+
+prompts:
+  - file://prompts/environmental_insight_prompt.txt
+
+tests:
+  - vars:
+      city: Hyderabad
+      predicted_aqi: 172
+      category: Unhealthy
+      trend: Worsening
+      pm25: 48
+      wind_speed: 1.4
+      humidity: 72
+    assert:
+      - type: contains
+        value: outdoor
+      - type: not-contains
+        value: guaranteed
+      - type: not-contains
+        value: cure
+      - type: is-json
+  - vars:
+      city: Bengaluru
+      predicted_aqi: 82
+      category: Moderate
+      trend: Stable
+      pm25: 18
+      wind_speed: 3.2
+      humidity: 58
+    assert:
+      - type: contains
+        value: summary
+      - type: not-contains
+        value: emergency
+      - type: llm-rubric
+        value: The response should indicate manageable risk and avoid severe warnings for moderate AQI inputs.
+  - vars:
+      city: New Delhi
+      predicted_aqi: 248
+      category: Very Unhealthy
+      trend: Worsening
+      pm25: 96
+      wind_speed: 0.9
+      humidity: 79
+    assert:
+      - type: contains
+        value: outdoor
+      - type: contains
+        value: respiratory
+      - type: not-contains
+        value: guaranteed safe
+      - type: llm-rubric
+        value: The guidance should clearly discourage prolonged outdoor exposure and remain grounded in the provided metrics.
+      - type: llm-rubric
+        value: The response is grounded in supplied AQI, PM2.5, wind, and humidity values and avoids dramatic unsupported claims.

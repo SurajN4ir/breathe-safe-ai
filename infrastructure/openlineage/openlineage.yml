@@ -1,0 +1,13 @@
+transport:
+  type: http
+  url: http://marquez:5000
+
+namespace: breathe-safe-ai
+
+jobs:
+  - name: data_ingestion
+    description: Ingest raw AQI dataset and register lineage metadata.
+  - name: data_validation
+    description: Validate AQI quality checks through Great Expectations.
+  - name: model_training
+    description: Train and log the Random Forest AQI model through MLflow.

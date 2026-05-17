@@ -1,0 +1,7 @@
+# Optional tooling for full MLOps demonstrations.
+# Install after requirements.txt when you want to run feature store,
+# drift reports, lineage clients, and prompt evaluation workflows.
+
+evidently
+feast
+openlineage-python

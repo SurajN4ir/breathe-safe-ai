@@ -1,0 +1,88 @@
+services:
+  api:
+    build: .
+    container_name: breathe-safe-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./models:/app/models
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://127.0.0.1:8000
+    container_name: breathe-safe-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.22.0
+    container_name: mlflow-server
+    volumes:
+      - .:/app
+    command: mlflow ui --host 0.0.0.0 --port 5000
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: breathe-safe-prometheus
+    profiles: ["observability"]
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: breathe-safe-grafana
+    profiles: ["observability"]
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+
+  marquez:
+    image: marquezproject/marquez:0.50.0
+    container_name: breathe-safe-marquez
+    profiles: ["lineage"]
+    depends_on:
+      - marquez-db
+    environment:
+      - MARQUEZ_PORT=5000
+      - MARQUEZ_ADMIN_PORT=5001
+      - POSTGRES_HOST=marquez-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=marquez
+      - POSTGRES_USER=marquez
+      - POSTGRES_PASSWORD=marquez
+    ports:
+      - "5001:5000"
+      - "5002:5001"
+    restart: unless-stopped
+
+  marquez-db:
+    image: postgres:16-alpine
+    container_name: breathe-safe-marquez-db
+    profiles: ["lineage"]
+    environment:
+      - POSTGRES_DB=marquez
+      - POSTGRES_USER=marquez
+      - POSTGRES_PASSWORD=marquez
+    volumes:
+      - marquez-db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  marquez-db:

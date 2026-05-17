@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: breathe-safe-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: breathe-safe.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: breathe-safe-frontend
+                port:
+                  number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: breathe-safe-api
+                port:
+                  number: 8000

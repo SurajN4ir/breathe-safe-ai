@@ -1,0 +1,29 @@
+{
+  "title": "Breathe Safe AI Overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "API Request Rate",
+      "targets": [
+        {
+          "expr": "rate(breathe_safe_api_requests_total[5m])",
+          "legendFormat": "requests/sec"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "API Endpoint Requests",
+      "targets": [
+        {
+          "expr": "sum by (endpoint) (breathe_safe_api_requests_total)",
+          "legendFormat": "{{endpoint}}"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    }
+  ]
+}
