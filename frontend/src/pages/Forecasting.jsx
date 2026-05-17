@@ -117,7 +117,7 @@ export default function Forecasting() {
 
   return (
     <div className="page-wrap animate-fade-in">
-      <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <header className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="mb-3 flex items-center gap-2 text-sm text-muted">
             <span className="material-symbols-outlined text-[18px] text-teal">home</span>
@@ -128,7 +128,7 @@ export default function Forecasting() {
             <span>{city.name}</span>
           </div>
           <p className="text-label text-teal mb-2">Future AQI Forecasting</p>
-          <h1 className="text-section">AQI forecast and outdoor safety outlook</h1>
+          <h1 className="text-heading">AQI forecast and outdoor safety outlook</h1>
           <p className="mt-2 max-w-3xl leading-7 text-muted">
             Live atmospheric conditions are converted into a near-term AQI estimate with health guidance.
           </p>

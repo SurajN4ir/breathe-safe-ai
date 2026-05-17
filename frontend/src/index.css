@@ -61,7 +61,7 @@
   }
 
   .page-wrap {
-    width: min(1180px, calc(100% - 32px));
+    width: min(1240px, calc(100% - 36px));
     margin: 0 auto;
   }
 
@@ -172,16 +172,16 @@
 @layer utilities {
   .text-display {
     color: var(--color-text);
-    font-size: clamp(2.45rem, 7vw, 5.8rem);
-    line-height: 0.98;
+    font-size: clamp(2.2rem, 5.2vw, 4.3rem);
+    line-height: 1.02;
     font-weight: 800;
     letter-spacing: 0;
   }
 
   .text-heading {
     color: var(--color-text);
-    font-size: clamp(2rem, 4vw, 3.35rem);
-    line-height: 1.08;
+    font-size: clamp(1.95rem, 3.2vw, 3rem);
+    line-height: 1.12;
     font-weight: 800;
     letter-spacing: 0;
   }
