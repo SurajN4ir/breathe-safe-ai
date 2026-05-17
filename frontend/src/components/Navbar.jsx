@@ -8,14 +8,14 @@ export default function Navbar() {
 
   const linkClass = ({ isActive }) =>
     `hidden sm:inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold transition ${
-      isActive ? 'text-teal bg-white/10' : 'text-muted hover:text-body hover:bg-white/10'
+      isActive ? 'text-teal bg-white/10 border border-white/10' : 'text-muted hover:text-body hover:bg-white/6 border border-transparent hover:border-white/10'
     }`;
 
   return (
-    <header className="fixed top-0 left-0 z-50 w-full border-b border-white/10 bg-[#102033]/82 backdrop-blur-2xl">
+    <header className="fixed top-0 left-0 z-50 w-full border-b border-white/10 bg-[#0c1118]/84 backdrop-blur-2xl shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
       <div className="h-16 px-container-desktop flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-3 min-w-0">
-          <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-teal-300 to-sky-300 flex items-center justify-center text-[#071521]">
+          <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#f3f4f6] to-[#cbd5e1] flex items-center justify-center text-[#071521] shadow-[0_0_18px_rgba(255,255,255,0.16)]">
             <span className="material-symbols-outlined text-[21px]">air</span>
           </span>
           <span className="font-extrabold text-lg sm:text-xl text-body whitespace-nowrap">Breathe Safe AI</span>
@@ -29,7 +29,7 @@ export default function Navbar() {
           </nav>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/10">
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10">
               <span className="material-symbols-outlined text-teal text-[18px]">location_on</span>
               <select
                 value={city.name}

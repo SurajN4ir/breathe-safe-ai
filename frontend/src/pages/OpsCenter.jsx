@@ -43,21 +43,21 @@ const statusStyle = {
 };
 
 const pipelineNodesData = [
-  ['raw', 'Raw AQI Dataset', 'Data source + batch snapshots', 'healthy', 20, 40],
-  ['ingest', 'Data Ingestion', 'Ingestion and schema checks', 'active', 260, 40],
-  ['gx', 'Great Expectations', 'Validation suite execution', 'healthy', 500, 40],
-  ['feature', 'Feature Engineering', 'Environmental feature prep', 'active', 740, 40],
-  ['feast', 'Feast Feature Store', 'Offline/online feature serving', 'healthy', 980, 40],
-  ['train', 'Model Training', 'Random Forest training jobs', 'active', 1220, 40],
-  ['mlflow', 'MLflow Tracking', 'Experiments + artifacts', 'healthy', 1460, 40],
-  ['registry', 'Model Registry', 'Versioned model governance', 'active', 1700, 40],
-  ['api', 'FastAPI Deployment', 'Prediction + forecast APIs', 'healthy', 1940, 40],
-  ['web', 'React Frontend', 'Dashboard + forecasting UX', 'active', 2180, 40],
-  ['monitor', 'Monitoring Stack', 'Ops telemetry routing', 'active', 2420, 40],
-  ['prom', 'Prometheus', 'Metric scraping and storage', 'healthy', 2660, 40],
-  ['graf', 'Grafana', 'Live dashboards + alerting', 'healthy', 2900, 40],
-  ['drift', 'Evidently Drift', 'Data and prediction drift', 'warning', 3140, 40],
-  ['lineage', 'OpenLineage + Marquez', 'Lineage metadata tracking', 'active', 3380, 40],
+  ['raw', 'Raw AQI Dataset', 'Data source + batch snapshots', 'healthy', 30, 40],
+  ['ingest', 'Data Ingestion', 'Ingestion and schema checks', 'active', 290, 40],
+  ['gx', 'Great Expectations', 'Validation suite execution', 'healthy', 550, 40],
+  ['feature', 'Feature Engineering', 'Environmental feature prep', 'active', 810, 40],
+  ['feast', 'Feast Feature Store', 'Offline/online feature serving', 'healthy', 1070, 40],
+  ['train', 'Model Training', 'Random Forest training jobs', 'active', 30, 210],
+  ['mlflow', 'MLflow Tracking', 'Experiments + artifacts', 'healthy', 290, 210],
+  ['registry', 'Model Registry', 'Versioned model governance', 'active', 550, 210],
+  ['api', 'FastAPI Deployment', 'Prediction + forecast APIs', 'healthy', 810, 210],
+  ['web', 'React Frontend', 'Dashboard + forecasting UX', 'active', 1070, 210],
+  ['monitor', 'Monitoring Stack', 'Ops telemetry routing', 'active', 30, 380],
+  ['prom', 'Prometheus', 'Metric scraping and storage', 'healthy', 290, 380],
+  ['graf', 'Grafana', 'Live dashboards + alerting', 'healthy', 550, 380],
+  ['drift', 'Evidently Drift', 'Data and prediction drift', 'warning', 810, 380],
+  ['lineage', 'OpenLineage + Marquez', 'Lineage metadata tracking', 'active', 1070, 380],
 ];
 
 const pipelineEdgesData = pipelineNodesData.slice(0, -1).map((entry, i) => ({
@@ -114,7 +114,7 @@ const radarSeries = [
 
 function GlowingNode({ data }) {
   return (
-    <div className="w-[210px] rounded-xl border border-cyan-300/30 bg-slate-900/85 p-3 shadow-[0_0_30px_rgba(56,189,248,0.16)] backdrop-blur-xl">
+    <div className="w-[220px] rounded-xl border border-cyan-300/30 bg-slate-900/85 p-3 shadow-[0_0_30px_rgba(56,189,248,0.16)] backdrop-blur-xl">
       <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border-0 !bg-cyan-300" />
       <div className="mb-2 flex items-start justify-between gap-2">
         <p className="text-xs font-bold uppercase tracking-wider text-slate-200">{data.label}</p>
@@ -232,7 +232,8 @@ export default function OpsCenter() {
                 edges={pipelineEdges}
                 nodeTypes={nodeTypes}
                 fitView
-                minZoom={0.25}
+                fitViewOptions={{ padding: 0.12, minZoom: 0.56, maxZoom: 1 }}
+                minZoom={0.5}
                 maxZoom={1.2}
                 onNodeClick={(_, node) => setSelectedPipeline(pipelineNodesData.find((n) => n[0] === node.id))}
               >
