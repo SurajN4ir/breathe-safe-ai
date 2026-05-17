@@ -14,7 +14,8 @@ from src.services.llm_insights import get_environment_insight
 
 from src.services.live_aqi import (
     get_weather_data,
-    get_air_pollution_data
+    get_air_pollution_data,
+    get_weather_forecast_data,
 )
 # -----------------------------
 # LOAD TRAINED MODEL
@@ -173,8 +174,9 @@ def get_forecast(
 
     weather_data, pollution_data = _fetch_live_environment(resolved_lat, resolved_lon)
     live_features = extract_live_features(weather_data, pollution_data)
+    future_weather = _fetch_future_weather_at_horizon(resolved_lat, resolved_lon, hours)
 
-    forecast = forecast_aqi(live_features, hours)
+    forecast = forecast_aqi(live_features, hours, future_weather=future_weather)
 
     # LLM insight falls back to a deterministic rule-based interpretation when
     # GROQ_API_KEY is not available.
@@ -229,3 +231,33 @@ def _fetch_live_environment(lat: float, lon: float):
             status_code=502,
             detail=f"Unable to fetch live environmental data: {exc}",
         ) from exc
+
+
+def _fetch_future_weather_at_horizon(lat: float, lon: float, hours: int):
+    """
+    Retrieves nearest forecast weather snapshot for the target horizon.
+    Returns None when unavailable so forecasting can safely fall back.
+    """
+    try:
+        forecast_payload = get_weather_forecast_data(lat, lon)
+        items = forecast_payload.get("list") or []
+        if not items:
+            return None
+
+        # OpenWeather forecast is in 3-hour steps; choose nearest bucket index.
+        target_hours = float(hours)
+        idx = min(max(int(round(target_hours / 3.0)) - 1, 0), len(items) - 1)
+        nearest = items[idx]
+
+        weather_desc = "unknown"
+        if nearest.get("weather"):
+            weather_desc = nearest["weather"][0].get("description", "unknown")
+
+        return {
+            "temperature": nearest.get("main", {}).get("temp"),
+            "humidity": nearest.get("main", {}).get("humidity"),
+            "wind_speed": nearest.get("wind", {}).get("speed"),
+            "weather_condition": weather_desc,
+        }
+    except Exception:
+        return None

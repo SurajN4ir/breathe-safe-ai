@@ -1,123 +1,75 @@
 # Breathe Safe AI
 
-Breathe Safe AI is an AI-powered environmental intelligence and AQI forecasting platform. It combines live air quality data, weather signals, machine learning model serving, lightweight future AQI forecasting, and LLM-powered health interpretation.
+Breathe Safe AI is an end-to-end AI + MLOps platform for live environmental intelligence and AQI forecasting.
+It combines live API ingestion, multi-horizon forecasting (1h, 3h, 6h, 12h, 24h), health guidance generation, and production-style MLOps tooling.
 
-The project now has two product modes:
+## Product Modes
 
-- Live Environmental Analysis: current AQI, weather, pollution metrics, and respiratory guidance.
-- Future AQI Forecasting: 1, 3, 6, 12, and 24 hour AQI outlooks with walking and health recommendations.
+- Live Environmental Analysis: current AQI, weather, pollutant metrics, and respiratory guidance.
+- Future AQI Forecasting: horizon-aware AQI prediction for 1/3/6/12/24 hours.
+- Environmental Insight Layer: structured, grounded interpretation for health and outdoor decisions.
 
-## Architecture
+## Pipeline Flow
 
-```text
-React Frontend
-  -> FastAPI Backend
-    -> Live Environmental Services
-      -> OpenWeather weather + air pollution APIs
-    -> Preprocessing Layer
-    -> Random Forest AQI Model
-    -> Forecasting Heuristics
-    -> Groq Llama 3 Environmental Insight Layer
-  -> MLOps Tooling
-    -> DVC, Great Expectations, Feast, MLflow, Evidently
-    -> Docker, Kubernetes, Prometheus, Grafana, OpenLineage, Marquez, ArgoCD
-    -> Promptfoo prompt evaluation
-```
+1. Data Ingestion  
+   `src/data/ingestion.py`
 
-## Backend
+2. Data Validation (Great Expectations)  
+   `src/data/validation.py`
 
-FastAPI serves the platform from `src/api/main.py`.
+3. Live Feature Processing  
+   `src/features/live_preprocessing.py`
 
-Endpoints:
+4. Model Training (Existing AQI model)  
+   `src/models/train.py`
 
-- `GET /`: API health check.
-- `POST /predict`: ML-based AQI prediction using `models/aqi_model.pkl`.
-- `GET /live-environment?lat=&lon=`: current weather and pollution data.
-- `GET /predict-live?lat=&lon=`: processed live environmental features.
-- `GET /forecast?city=Hyderabad&hours=6`: future AQI forecast. Coordinates can also be supplied with `lat` and `lon`.
+5. Multi-Horizon Forecast Training (1/3/6/12/24h)  
+   `src/models/train_forecast_multi_horizon.py`
 
-Forecast response includes predicted AQI, AQI category, trend, walking safety, respiratory warning, health recommendation, confidence, contributing factors, and AI insight.
+6. Lineage Event Emission (OpenLineage-ready)  
+   `src/mlops/openlineage.py`
 
-## Forecasting Logic
+7. API Serving  
+   `src/api/main.py`
 
-The forecasting layer is a lightweight predictive intelligence module, not a deep atmospheric model. It estimates AQI drift using:
+## Core API Endpoints
 
-- current AQI
-- PM2.5 and PM10
-- humidity
-- wind speed
-- NO2
-- forecast horizon
+- `GET /` - backend health.
+- `POST /predict` - ML AQI prediction from encoded features.
+- `GET /live-environment?lat=&lon=` - raw live weather + pollution.
+- `GET /predict-live?lat=&lon=` - processed live environmental features.
+- `GET /forecast?city=Hyderabad&hours=6` - multi-horizon AQI forecast.
+- `GET /metrics` - Prometheus-compatible API telemetry.
 
-Low wind, elevated particulate matter, and high humidity can increase projected AQI. Stronger wind can improve the estimate by dispersing pollution. The longer the horizon, the more directional the forecast becomes.
+## Forecasting Architecture
 
-## LLM Environmental Insight Layer
+The forecast endpoint now uses a horizon-aware hybrid strategy:
 
-`src/services/llm_insights.py` uses Groq with Llama 3 when `GROQ_API_KEY` is configured. The LLM acts as an Environmental Health Intelligence Engine, not a chatbot.
+- Current pollution signals (PM2.5, PM10, NO2, CO, AQI anchor)
+- Forecasted weather at selected horizon (wind, humidity, temperature, condition)
+- Trained multi-horizon models when artifacts are available
+- Safe heuristic fallback when trained models are unavailable
 
-It receives structured AQI, pollution, weather, and forecast values, then returns JSON:
+Trained artifacts path:
 
-- `summary`
-- `risk_interpretation`
-- `outdoor_guidance`
-- `health_recommendation`
+- `models/forecast_models/aqi_forecast_1h.joblib`
+- `models/forecast_models/aqi_forecast_3h.joblib`
+- `models/forecast_models/aqi_forecast_6h.joblib`
+- `models/forecast_models/aqi_forecast_12h.joblib`
+- `models/forecast_models/aqi_forecast_24h.joblib`
 
-If Groq is unavailable, the backend returns deterministic rule-based guidance.
+## Quick Start
 
-Promptfoo-compatible prompt tests live in `promptfoo/`.
-
-## Frontend
-
-The React + Vite frontend lives in `frontend/`.
-
-Main routes:
-
-- `/`: premium overview page.
-- `/dashboard`: live environmental analysis.
-- `/forecast`: AQI forecasting workflow.
-- `/prediction`: existing ML prediction workflow.
-
-Configure the frontend API base URL with:
-
-```bash
-VITE_API_BASE_URL=http://127.0.0.1:8000
-```
-
-## MLOps Stack
-
-Assignment coverage:
-
-- Data Lineage: OpenLineage + Marquez scaffold in `infrastructure/openlineage/` and `docker-compose.yml`, with lineage event emission in ingestion/validation/training jobs.
-- Versioning: DVC initialized with `.dvc/`.
-- Data Quality: Great Expectations in `gx/`.
-- Feature Store: Feast config in `feature_store/`.
-- Experiment Tracking: MLflow in `src/models/train.py` and Docker Compose.
-- Orchestration: Docker Compose and Kubernetes manifests in `infrastructure/kubernetes/`.
-- Deployment: FastAPI backend and React frontend.
-- Monitoring: Evidently report script in `monitoring/`.
-- Infrastructure Monitoring: Prometheus and Grafana configs in `infrastructure/`.
-- SCM and CI: GitHub Actions in `.github/workflows/ci.yml`.
-- Continuous Deployment: ArgoCD application manifest in `infrastructure/argocd/`.
-- Prompt Management: Promptfoo config in `promptfoo/`.
-
-## Local Setup
-
-Backend:
+### Backend
 
 ```bash
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn src.api.main:app --reload
+uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Optional full MLOps tooling:
-
-```bash
-pip install -r requirements-mlops.txt
-```
-
-Frontend:
+### Frontend
 
 ```bash
 cd frontend
@@ -125,30 +77,76 @@ npm install
 npm run dev
 ```
 
-Docker:
+### Primary URLs
+
+- API Docs: `http://127.0.0.1:8000/docs`
+- API Metrics: `http://127.0.0.1:8000/metrics`
+- Frontend: `http://127.0.0.1:5173` (or `5174` if 5173 is in use)
+
+## Multi-Horizon Model Training
+
+### 1) Build historical city-hourly dataset
+
+```bash
+python -m src.data.build_city_hourly_dataset
+```
+
+Output:
+
+- `data/processed/city_hourly_aqi.csv`
+
+### 2) Train 1/3/6/12/24h forecasting models
+
+```bash
+python -m src.models.train_forecast_multi_horizon
+```
+
+Outputs:
+
+- `models/forecast_models/*.joblib`
+- `models/forecast_models/training_summary.json`
+- MLflow experiment runs in `BreatheSafeAQI_Forecast_MultiHorizon`
+
+## MLOps Requirements Mapping
+
+- Source Control + CI: `.github/workflows/`
+- FastAPI Serving: `src/api/main.py`
+- React Frontend: `frontend/src/`
+- Experiment Tracking + Registry: MLflow in training scripts + compose service
+- Containerization: `Dockerfile`, `docker-compose.yml`
+- Data Quality: `gx/`, `src/data/validation.py`
+- Feature Store: `feature_store/`
+- Data Versioning: DVC files (`.dvc/` if initialized)
+- Data Lineage: `src/mlops/openlineage.py`, `infrastructure/openlineage/`, Marquez service
+- Monitoring (model/data): `monitoring/evidently_report.py`
+- Infra Monitoring: `infrastructure/prometheus/`, `infrastructure/grafana/`
+- Kubernetes: `infrastructure/kubernetes/`
+- ArgoCD: `infrastructure/argocd/`
+- Prompt Management: `promptfoo/`
+
+## Docker Profiles
+
+Core services:
 
 ```bash
 docker compose up -d --build api frontend mlflow
 ```
 
-Optional observability and lineage profiles:
+Observability stack:
 
 ```bash
 docker compose --profile observability up -d
+```
+
+Lineage stack:
+
+```bash
 docker compose --profile lineage up -d
 ```
 
-Service URLs:
-
-- FastAPI: `http://127.0.0.1:8000`
-- MLflow: `http://127.0.0.1:5000`
-- Prometheus: `http://127.0.0.1:9090`
-- Grafana: `http://127.0.0.1:3001`
-- Marquez: `http://127.0.0.1:5001`
-
 ## Environment Variables
 
-Copy `.env.example` to `.env` and add your keys:
+Create `.env` from `.env.example` and set:
 
 ```bash
 OPENWEATHER_API_KEY=your_openweather_key
@@ -158,40 +156,19 @@ OPENLINEAGE_URL=http://127.0.0.1:5001/api/v1/lineage
 OPENLINEAGE_NAMESPACE=breathe-safe-ai
 ```
 
-Never commit `.env` to GitHub. It is ignored by `.gitignore`.
+## Verification Checklist
 
-## Future Roadmap
+- API up: open `/docs`.
+- Metrics up: open `/metrics`.
+- Forecast works for all horizons: call `/forecast` with `hours=1,3,6,12,24`.
+- Trained mode active: response `method` includes `Trained multi-horizon model blended...`.
+- MLflow runs visible at `http://127.0.0.1:5000`.
+- Prometheus/Grafana reachable when observability profile is enabled.
+- Marquez reachable when lineage profile is enabled.
 
-- Train a true historical AQI forecasting model with XGBoost, Prophet, or LSTM.
-- Add city-level historical AQI feature pipelines through Feast.
-- Add OpenLineage dataset schema facets and column-level metadata.
-- Add Evidently scheduled drift reports.
-- Deploy Kubernetes manifests through ArgoCD.
-- Expand Promptfoo tests for hallucination resistance and guidance consistency.
+## Roadmap
 
-## Pipeline Commands
-
-Run data ingestion:
-
-```bash
-python -m src.data.ingestion
-```
-
-Run Great Expectations validation (fails with non-zero exit if checks fail):
-
-```bash
-python -m src.data.validation
-```
-
-Train model with MLflow tracking and OpenLineage event emission:
-
-```bash
-python -m src.models.train
-```
-
-Run Promptfoo prompt tests:
-
-```bash
-cd promptfoo
-promptfoo eval -c promptfooconfig.yaml
-```
+- Add city-level model selection and confidence intervals (`predicted_aqi_low/high`).
+- Add scheduled retraining and drift-triggered model refresh.
+- Extend feature store usage for online/offline feature parity.
+- Strengthen lineage facets with dataset schema and model version links.

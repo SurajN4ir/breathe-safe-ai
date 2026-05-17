@@ -6,13 +6,23 @@ from current pollution and weather conditions instead of pretending to be a
 trained atmospheric time-series model.
 """
 
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import joblib
+import numpy as np
 
 
 VALID_HORIZONS = {1, 3, 6, 12, 24}
+MODEL_DIR = Path("models/forecast_models")
+_forecast_models: Dict[int, Any] = {}
 
 
-def forecast_aqi(live_features: Dict[str, Any], hours: int) -> Dict[str, Any]:
+def forecast_aqi(
+    live_features: Dict[str, Any],
+    hours: int,
+    future_weather: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     """Estimate future AQI from current environmental conditions."""
     safe_hours = hours if hours in VALID_HORIZONS else 6
 
@@ -24,14 +34,23 @@ def forecast_aqi(live_features: Dict[str, Any], hours: int) -> Dict[str, Any]:
     co = _num(live_features.get("co"), 200)
     temperature = _num(live_features.get("temperature"), 25)
     weather_condition = live_features.get("weather_condition", "not provided")
+    forecast_wind = _num((future_weather or {}).get("wind_speed"), wind)
+    forecast_humidity = _num((future_weather or {}).get("humidity"), humidity)
+    forecast_temp = _num((future_weather or {}).get("temperature"), temperature)
+    forecast_condition = (future_weather or {}).get("weather_condition", weather_condition)
     owm_aqi = int(_num(live_features.get("aqi"), 2))
 
     base_aqi = round(_owm_to_numeric(owm_aqi, pm25))
     horizon_scale = safe_hours / 6
 
-    wind_dispersion = -1.4 * wind * horizon_scale
-    low_wind_accumulation = max(0, 2.2 - wind) * 8 * horizon_scale
-    humidity_trapping = max(0, humidity - 55) * 0.22 * horizon_scale
+    effective_wind = (wind * 0.45) + (forecast_wind * 0.55)
+    effective_humidity = (humidity * 0.4) + (forecast_humidity * 0.6)
+    weather_shift = _weather_shift(weather_condition, forecast_condition, horizon_scale)
+    thermal_stagnation = max(0, forecast_temp - 33) * 0.18 * horizon_scale
+
+    wind_dispersion = -1.5 * effective_wind * horizon_scale
+    low_wind_accumulation = max(0, 2.2 - effective_wind) * 8.5 * horizon_scale
+    humidity_trapping = max(0, effective_humidity - 55) * 0.24 * horizon_scale
     pm25_pressure = max(0, pm25 - 25) * 0.48 * horizon_scale
     pm10_pressure = max(0, pm10 - 60) * 0.12 * horizon_scale
     traffic_pressure = max(0, no2 - 25) * 0.10 * horizon_scale
@@ -43,11 +62,34 @@ def forecast_aqi(live_features: Dict[str, Any], hours: int) -> Dict[str, Any]:
         + pm25_pressure
         + pm10_pressure
         + traffic_pressure
+        + thermal_stagnation
+        + weather_shift
     )
 
     max_drift = safe_hours * 5.5
     total_drift = max(-max_drift, min(max_drift, total_drift))
     predicted_aqi = round(max(0, min(500, base_aqi + total_drift)))
+
+    model_aqi = _predict_model_aqi(
+        hours=safe_hours,
+        base_aqi=base_aqi,
+        pm25=pm25,
+        pm10=pm10,
+        no2=no2,
+        co=co,
+        temperature=temperature,
+        humidity=humidity,
+        wind=wind,
+        forecast_temp=forecast_temp,
+        forecast_humidity=forecast_humidity,
+        forecast_wind=forecast_wind,
+    )
+
+    if model_aqi is not None:
+        # Blend trained-model estimate with heuristic for stability.
+        blend_weight = 0.68 if safe_hours <= 6 else 0.75
+        predicted_aqi = round((model_aqi * blend_weight) + (predicted_aqi * (1 - blend_weight)))
+        total_drift = predicted_aqi - base_aqi
 
     category = _aqi_category(predicted_aqi)
     walking_safety = _walking_safety(predicted_aqi)
@@ -64,18 +106,26 @@ def forecast_aqi(live_features: Dict[str, Any], hours: int) -> Dict[str, Any]:
         "recommendation": _recommendation(predicted_aqi),
         "respiratory_warning": _respiratory_warning(predicted_aqi, pm25),
         "confidence": _confidence_label(safe_hours),
-        "method": "Heuristic near-term forecast using current AQI, particulate matter, humidity, wind, and NO2.",
+        "method": (
+            "Trained multi-horizon model blended with horizon-aware heuristic."
+            if model_aqi is not None
+            else "Horizon-aware hybrid forecast using current pollution plus forecasted weather at target horizon."
+        ),
         "factors": {
             "wind_speed_ms": wind,
+            "forecast_wind_speed_ms": round(forecast_wind, 2),
             "humidity_pct": humidity,
+            "forecast_humidity_pct": round(forecast_humidity, 2),
             "pm25_ugm3": pm25,
             "pm10_ugm3": pm10,
             "no2_ugm3": no2,
             "co_ugm3": co,
             "temperature_c": temperature,
+            "forecast_temperature_c": round(forecast_temp, 2),
             "weather_condition": weather_condition,
+            "forecast_weather_condition": forecast_condition,
         },
-        "factor_explanations": _factor_explanations(pm25, pm10, wind, humidity, no2),
+        "factor_explanations": _factor_explanations(pm25, pm10, effective_wind, effective_humidity, no2),
     }
 
 
@@ -199,3 +249,81 @@ def _factor_explanations(pm25: float, pm10: float, wind: float, humidity: float,
         "traffic_pollution": "Elevated NO2 can indicate traffic or combustion-related pollution pressure.",
         "current_state": f"Current PM2.5 is {pm25:.1f} ug/m3 and PM10 is {pm10:.1f} ug/m3 with wind at {wind:.1f} m/s.",
     }
+
+
+def _weather_shift(current_condition: str, forecast_condition: str, horizon_scale: float) -> float:
+    current = (current_condition or "").lower()
+    future = (forecast_condition or "").lower()
+
+    improvement = ("rain" in future) or ("thunder" in future) or ("storm" in future)
+    worsening = ("mist" in future) or ("haze" in future) or ("smoke" in future) or ("dust" in future) or ("fog" in future)
+
+    drift = 0.0
+    if improvement:
+        drift -= 5.5 * horizon_scale
+    if worsening:
+        drift += 6.5 * horizon_scale
+    if ("clear" in current and worsening) or ("cloud" in current and worsening):
+        drift += 2.0 * horizon_scale
+    return drift
+
+
+def _predict_model_aqi(
+    *,
+    hours: int,
+    base_aqi: float,
+    pm25: float,
+    pm10: float,
+    no2: float,
+    co: float,
+    temperature: float,
+    humidity: float,
+    wind: float,
+    forecast_temp: float,
+    forecast_humidity: float,
+    forecast_wind: float,
+) -> Optional[int]:
+    model = _load_model(hours)
+    if model is None:
+        return None
+
+    features = np.array(
+        [[
+            base_aqi,
+            pm25,
+            pm10,
+            no2,
+            co,
+            temperature,
+            humidity,
+            wind,
+            forecast_temp,
+            forecast_humidity,
+            forecast_wind,
+            hours,
+        ]],
+        dtype=float,
+    )
+
+    try:
+        pred = float(model.predict(features)[0])
+    except Exception:
+        return None
+
+    return int(round(max(0, min(500, pred))))
+
+
+def _load_model(hours: int):
+    if hours in _forecast_models:
+        return _forecast_models[hours]
+
+    model_path = MODEL_DIR / f"aqi_forecast_{hours}h.joblib"
+    if not model_path.exists():
+        _forecast_models[hours] = None
+        return None
+
+    try:
+        _forecast_models[hours] = joblib.load(model_path)
+    except Exception:
+        _forecast_models[hours] = None
+    return _forecast_models[hours]

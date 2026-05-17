@@ -1,0 +1,102 @@
+{
+  "1": {
+    "mae": 2.056,
+    "rmse": 6.321,
+    "rows": 87590,
+    "features": [
+      "base_aqi",
+      "pm2_5",
+      "pm10",
+      "no2",
+      "co",
+      "temperature",
+      "humidity",
+      "wind_speed",
+      "forecast_temp",
+      "forecast_humidity",
+      "forecast_wind",
+      "horizon_hours"
+    ],
+    "model_path": "models\\forecast_models\\aqi_forecast_1h.joblib"
+  },
+  "3": {
+    "mae": 3.862,
+    "rmse": 7.571,
+    "rows": 87570,
+    "features": [
+      "base_aqi",
+      "pm2_5",
+      "pm10",
+      "no2",
+      "co",
+      "temperature",
+      "humidity",
+      "wind_speed",
+      "forecast_temp",
+      "forecast_humidity",
+      "forecast_wind",
+      "horizon_hours"
+    ],
+    "model_path": "models\\forecast_models\\aqi_forecast_3h.joblib"
+  },
+  "6": {
+    "mae": 5.833,
+    "rmse": 9.957,
+    "rows": 87540,
+    "features": [
+      "base_aqi",
+      "pm2_5",
+      "pm10",
+      "no2",
+      "co",
+      "temperature",
+      "humidity",
+      "wind_speed",
+      "forecast_temp",
+      "forecast_humidity",
+      "forecast_wind",
+      "horizon_hours"
+    ],
+    "model_path": "models\\forecast_models\\aqi_forecast_6h.joblib"
+  },
+  "12": {
+    "mae": 8.664,
+    "rmse": 14.159,
+    "rows": 87480,
+    "features": [
+      "base_aqi",
+      "pm2_5",
+      "pm10",
+      "no2",
+      "co",
+      "temperature",
+      "humidity",
+      "wind_speed",
+      "forecast_temp",
+      "forecast_humidity",
+      "forecast_wind",
+      "horizon_hours"
+    ],
+    "model_path": "models\\forecast_models\\aqi_forecast_12h.joblib"
+  },
+  "24": {
+    "mae": 13.632,
+    "rmse": 23.12,
+    "rows": 87360,
+    "features": [
+      "base_aqi",
+      "pm2_5",
+      "pm10",
+      "no2",
+      "co",
+      "temperature",
+      "humidity",
+      "wind_speed",
+      "forecast_temp",
+      "forecast_humidity",
+      "forecast_wind",
+      "horizon_hours"
+    ],
+    "model_path": "models\\forecast_models\\aqi_forecast_24h.joblib"
+  }
+}

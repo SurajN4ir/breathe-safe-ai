@@ -42,3 +42,23 @@ def get_air_pollution_data(lat, lon):
     response.raise_for_status()
 
     return response.json()
+
+
+def get_weather_forecast_data(lat, lon):
+    """
+    Returns OpenWeather 5-day/3-hour forecast data.
+    Used to improve multi-horizon AQI forecasting by incorporating expected
+    wind, humidity, and temperature at the requested horizon.
+    """
+    _require_api_key()
+
+    url = (
+        f"{BASE_URL}/forecast?"
+        f"lat={lat}&lon={lon}"
+        f"&appid={API_KEY}&units=metric"
+    )
+
+    response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
+    response.raise_for_status()
+
+    return response.json()
