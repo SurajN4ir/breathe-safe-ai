@@ -32,6 +32,18 @@ def _get_model():
         _model = joblib.load(MODEL_PATH)
     return _model
 
+
+def _fallback_predict_aqi(data: "AQIInput") -> float:
+    # Deterministic weighted fallback used only when model artifact is unavailable.
+    baseline = 52.0
+    score = baseline
+    score += float(data.state) * 7.0
+    score += float(data.area) * 5.0
+    score += float(data.number_of_monitoring_stations) * 1.8
+    score += float(data.prominent_pollutants) * 8.0
+    score += float(data.air_quality_status) * 12.5
+    return max(0.0, min(500.0, score))
+
 # -----------------------------
 # CREATE FASTAPI APP
 # -----------------------------
@@ -103,7 +115,12 @@ def predict(data: AQIInput):
     REQUEST_COUNT.labels(endpoint="/predict").inc()
     model = _get_model()
     if model is None:
-        raise HTTPException(status_code=503, detail="AQI model artifact not found. Train the model or mount models/aqi_model.pkl.")
+        fallback = _fallback_predict_aqi(data)
+        return {
+            "predicted_aqi": round(float(fallback), 2),
+            "method": "fallback_heuristic_model_missing",
+            "message": "Model artifact not found; served deterministic fallback prediction."
+        }
 
     input_data = np.array([[
         data.state,
@@ -119,7 +136,8 @@ def predict(data: AQIInput):
     prediction = model.predict(input_data)
 
     return {
-        "predicted_aqi": round(float(prediction[0]), 2)
+        "predicted_aqi": round(float(prediction[0]), 2),
+        "method": "trained_model"
     }
 
 @app.get("/live-environment")

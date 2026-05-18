@@ -66,22 +66,6 @@ const pipelineEdgesData = pipelineNodesData.slice(0, -1).map((entry, i) => ({
   target: pipelineNodesData[i + 1][0],
 }));
 
-const lineageNodesData = [
-  ['dataset', 'AQI Raw Dataset', 'Ingestion Source', 'healthy', 40, 90],
-  ['validated', 'Validated Dataset', 'Great Expectations', 'healthy', 280, 90],
-  ['processed', 'Processed Features', 'Feature Engineering', 'active', 520, 90],
-  ['store', 'Feature Store', 'Feast', 'healthy', 760, 90],
-  ['training', 'Training Dataset', 'Training Split', 'active', 1000, 90],
-  ['model', 'Model Artifact', 'MLflow Registry', 'healthy', 1240, 90],
-  ['prediction', 'Prediction API', 'FastAPI Serving', 'active', 1480, 90],
-  ['dashboard', 'Frontend Dashboard', 'React Consumption', 'healthy', 1720, 90],
-];
-
-const lineageEdgesData = lineageNodesData.slice(0, -1).map((entry, i) => ({
-  id: `lineage-${entry[0]}-${lineageNodesData[i + 1][0]}`,
-  source: entry[0],
-  target: lineageNodesData[i + 1][0],
-}));
 
 const liveMetrics = [
   { label: 'Pipeline Execution', value: '96.8%', tone: 'healthy', icon: Workflow },
@@ -130,7 +114,6 @@ function GlowingNode({ data }) {
 
 export default function OpsCenter() {
   const [selectedPipeline, setSelectedPipeline] = useState(pipelineNodesData[0]);
-  const [selectedLineage, setSelectedLineage] = useState(lineageNodesData[0]);
 
   const nodeTypes = useMemo(() => ({ glowing: GlowingNode }), []);
 
@@ -156,27 +139,6 @@ export default function OpsCenter() {
     []
   );
 
-  const lineageNodes = useMemo(
-    () =>
-      lineageNodesData.map(([id, label, description, status, x, y]) => ({
-        id,
-        type: 'glowing',
-        position: { x, y },
-        data: { label, description, status },
-      })),
-    []
-  );
-
-  const lineageEdges = useMemo(
-    () =>
-      lineageEdgesData.map((edge) => ({
-        ...edge,
-        animated: true,
-        style: { stroke: '#a78bfa', strokeWidth: 2 },
-        markerEnd: { type: MarkerType.ArrowClosed, color: '#a78bfa' },
-      })),
-    []
-  );
 
   return (
     <div className="relative overflow-hidden pb-10">
@@ -248,44 +210,6 @@ export default function OpsCenter() {
               <p className="mb-3 text-sm leading-6 text-slate-300">{selectedPipeline?.[2]}</p>
               <p className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusStyle[selectedPipeline?.[3]]}`}>
                 {selectedPipeline?.[3]}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mb-7 rounded-xl border border-violet-300/20 bg-slate-950/70 p-4 shadow-[0_0_40px_rgba(167,139,250,0.1)] backdrop-blur-2xl">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-label text-indigo-200">Data Lineage Visualization</p>
-              <h2 className="text-section">OpenLineage-inspired relationship graph</h2>
-            </div>
-            <span className="rounded-full border border-violet-300/45 bg-violet-300/10 px-3 py-1 text-xs font-bold text-violet-200">
-              Marquez style lineage pathing
-            </span>
-          </div>
-          <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
-            <div className="h-[360px] overflow-hidden rounded-xl border border-white/10">
-              <ReactFlow
-                nodes={lineageNodes}
-                edges={lineageEdges}
-                nodeTypes={nodeTypes}
-                fitView
-                minZoom={0.3}
-                maxZoom={1.2}
-                onNodeClick={(_, node) => setSelectedLineage(lineageNodesData.find((n) => n[0] === node.id))}
-              >
-                <MiniMap className="!bg-slate-900/80" nodeColor={() => '#a78bfa'} />
-                <Controls />
-                <Background color="#2a2353" gap={22} />
-              </ReactFlow>
-            </div>
-            <div className="rounded-xl border border-violet-300/25 bg-violet-950/35 p-4">
-              <p className="text-label mb-2 text-violet-100">Lineage Metadata</p>
-              <h3 className="mb-2 text-xl font-bold text-white">{selectedLineage?.[1]}</h3>
-              <p className="mb-2 text-sm text-slate-300">Source Stage: {selectedLineage?.[2]}</p>
-              <p className="mb-3 text-sm text-slate-300">Last Update: 2026-05-17 16:30 IST</p>
-              <p className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusStyle[selectedLineage?.[3]]}`}>
-                {selectedLineage?.[3]}
               </p>
             </div>
           </div>
