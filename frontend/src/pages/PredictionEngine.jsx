@@ -30,7 +30,6 @@ export default function PredictionEngine() {
   const [predicting, setPredicting] = useState(false);
   const [predictionResult, setPredictionResult] = useState(null);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
   const [formData, setFormData] = useState({
     state: 1,
     area: 1,
@@ -79,7 +78,6 @@ export default function PredictionEngine() {
     event.preventDefault();
     setPredicting(true);
     setError(null);
-    setNotice(null);
     try {
       const data = await predictAQI(formData);
       setPredictionResult(data);
@@ -90,7 +88,6 @@ export default function PredictionEngine() {
           predicted_aqi: localFallbackPredict(formData),
           method: 'frontend_fallback_heuristic',
         });
-        setNotice('Primary model artifact is not available on deployed API yet. Using fallback estimation for now.');
       } else {
         setError(detail || 'Prediction failed. Please try again.');
       }
@@ -190,12 +187,6 @@ export default function PredictionEngine() {
               />
             </div>
           </div>
-
-          {notice && (
-            <div className="mt-4 rounded-lg border border-amber-300/25 bg-amber-300/10 p-3 text-sm font-semibold text-amber">
-              {notice}
-            </div>
-          )}
 
           {error && (
             <div className="mt-4 rounded-lg border border-rose-300/25 bg-rose-300/10 p-3 text-sm font-semibold text-rose">
