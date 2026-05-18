@@ -30,6 +30,7 @@ export default function PredictionEngine() {
   const [predicting, setPredicting] = useState(false);
   const [predictionResult, setPredictionResult] = useState(null);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [formData, setFormData] = useState({
     state: 1,
     area: 1,
@@ -64,15 +65,35 @@ export default function PredictionEngine() {
     setFormData({ ...formData, [event.target.name]: Number(event.target.value) });
   }
 
+  function localFallbackPredict(data) {
+    let score = 52;
+    score += Number(data.state) * 7;
+    score += Number(data.area) * 5;
+    score += Number(data.number_of_monitoring_stations) * 1.8;
+    score += Number(data.prominent_pollutants) * 8;
+    score += Number(data.air_quality_status) * 12.5;
+    return Math.max(0, Math.min(500, score));
+  }
+
   async function handlePredict(event) {
     event.preventDefault();
     setPredicting(true);
     setError(null);
+    setNotice(null);
     try {
       const data = await predictAQI(formData);
       setPredictionResult(data);
     } catch (err) {
-      setError(err?.response?.data?.detail || 'Prediction failed. Confirm the model artifact is available in models/aqi_model.pkl.');
+      const detail = err?.response?.data?.detail || '';
+      if (String(detail).toLowerCase().includes('model artifact not found')) {
+        setPredictionResult({
+          predicted_aqi: localFallbackPredict(formData),
+          method: 'frontend_fallback_heuristic',
+        });
+        setNotice('Primary model artifact is not available on deployed API yet. Using fallback estimation for now.');
+      } else {
+        setError(detail || 'Prediction failed. Please try again.');
+      }
     } finally {
       setPredicting(false);
     }
@@ -169,6 +190,12 @@ export default function PredictionEngine() {
               />
             </div>
           </div>
+
+          {notice && (
+            <div className="mt-4 rounded-lg border border-amber-300/25 bg-amber-300/10 p-3 text-sm font-semibold text-amber">
+              {notice}
+            </div>
+          )}
 
           {error && (
             <div className="mt-4 rounded-lg border border-rose-300/25 bg-rose-300/10 p-3 text-sm font-semibold text-rose">
