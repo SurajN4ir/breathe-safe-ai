@@ -72,6 +72,20 @@ services:
       - "5002:5001"
     restart: unless-stopped
 
+  marquez-web:
+    image: marquezproject/marquez-web:0.50.0
+    container_name: breathe-safe-marquez-web
+    profiles: ["lineage"]
+    environment:
+      - MARQUEZ_HOST=marquez
+      - MARQUEZ_PORT=5000
+      - WEB_PORT=3000
+    depends_on:
+      - marquez
+    ports:
+      - "3002:3000"
+    restart: unless-stopped
+
   marquez-db:
     image: postgres:16-alpine
     container_name: breathe-safe-marquez-db
